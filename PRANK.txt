@@ -5,37 +5,45 @@ import threading
 
 class PrankApp:
     def __init__(self):
+        # 建立主視窗並設定全螢幕、黑底、隱藏滑鼠
         self.root = tk.Tk()
         self.root.attributes("-fullscreen", True)
         self.root.configure(bg="black")
-        self.root.config(cursor="none")
+        self.root.config(cursor="none")  # 隱藏滑鼠游標
 
+        # 封鎖常見的關閉鍵盤事件（關閉視窗、Alt+F4、Esc、Ctrl+Q）
         for seq in ["WM_DELETE_WINDOW", "<Alt-F4>", "<Escape>", "<Control-q>"]:
             self.root.bind_all(seq, self.disable_event)
 
+        # 建立畫布，佔據整個視窗，用來顯示特效
         self.canvas = tk.Canvas(self.root, bg="black", highlightthickness=0)
         self.canvas.pack(fill="both", expand=True)
         self.width = self.root.winfo_screenwidth()
         self.height = self.root.winfo_screenheight()
 
+        # 顯示的警告文字內容
         self.messages = ["ACCESS GRANTED", "SYSTEM BREACH", "TRACE IN PROGRESS", "OVERRIDE ENABLED"]
         self.frame_count = 0
         self.blink = True
 
-        self.root.after(10000, self.start_hacker_effect)  # 10秒後開始
+        # 延遲 10 秒後開始黑客特效
+        self.root.after(10000, self.start_hacker_effect)
 
+    # 禁用關閉或其他熱鍵事件
     def disable_event(self, event=None):
         return "break"
 
+    # 開始黑客特效（持續時間為 20 秒）
     def start_hacker_effect(self):
-        self.effect_duration = 20000  # 持續20秒
+        self.effect_duration = 20000  # 單位為毫秒
         self.update_hacker_effect()
         self.root.after(self.effect_duration, self.freeze_screen_then_bsod)
 
+    # 黑客特效主邏輯：閃爍綠字、紅框、中央文字
     def update_hacker_effect(self):
-        self.canvas.delete("all")
+        self.canvas.delete("all")  # 清除畫布內容
 
-        # Matrix綠字特效（加強版）
+        # 類似駭客帝國的綠色隨機字元掉落特效
         for _ in range(300):
             x = random.randint(0, self.width)
             y = random.randint(0, self.height)
@@ -45,8 +53,7 @@ class PrankApp:
             color = f"#00{green_value:02X}00"
             self.canvas.create_text(x, y, text=char, fill=color, font=("Courier", size, "bold"))
 
-        # 閃爍紅框效果
-        # 生成隨機數量紅框 (3~7個)
+        # 隨機畫出數個紅框，模擬警告訊號
         num_boxes = random.randint(3, 7)
         for _ in range(num_boxes):
             x1 = random.randint(0, self.width - 100)
@@ -54,12 +61,11 @@ class PrankApp:
             w = random.randint(50, 150)
             h = random.randint(30, 100)
             alpha = random.choice([0.3, 0.5, 0.7, 1.0])
-            # 紅色帶alpha效果(因為canvas不支持alpha，改用顏色深淺)
             red_shade = int(255 * alpha)
             color = f"#{red_shade:02X}0000"
             self.canvas.create_rectangle(x1, y1, x1 + w, y1 + h, outline=color, width=3)
 
-        # 中央紅字閃爍訊息
+        # 中央顯示紅色大字（閃爍）
         if self.frame_count % 6 == 0 and self.blink:
             msg = random.choice(self.messages)
             self.canvas.create_text(self.width // 2, self.height // 2, text=msg, fill="red",
@@ -67,13 +73,16 @@ class PrankApp:
 
         self.blink = not self.blink
         self.frame_count += 1
-        self.effect_job = self.root.after(60, self.update_hacker_effect)  # 60ms更新一次
+        # 每 60 毫秒重新更新一次畫面
+        self.effect_job = self.root.after(60, self.update_hacker_effect)
 
+    # 特效結束後，閃屏幾次，然後顯示藍底錯誤畫面（假藍底死當）
     def freeze_screen_then_bsod(self):
         self.root.after_cancel(self.effect_job)
         self.flash_screen(3, 0.2)
         self.show_bsod_screen()
 
+    # 閃爍黑白背景效果，模擬系統錯亂
     def flash_screen(self, times, interval):
         for _ in range(times):
             self.root.configure(bg="white")
@@ -83,54 +92,64 @@ class PrankApp:
             self.root.update()
             time.sleep(interval)
 
+    # 顯示藍底白字的 BSOD 畫面
     def show_bsod_screen(self):
         self.canvas.pack_forget()
         self.bsod_win = tk.Toplevel(self.root)
         self.bsod_win.attributes("-fullscreen", True)
         self.bsod_win.configure(bg="#0000AA")
+
+        # 禁止關閉與快捷鍵
         for seq in ["WM_DELETE_WINDOW", "<Alt-F4>", "<Escape>"]:
             self.bsod_win.bind_all(seq, self.disable_event)
 
+        # 倒數 12 秒
         self.remaining_seconds = 12
         self.bsod_label = tk.Label(self.bsod_win, font=("Consolas", 30),
                                    fg="white", bg="#0000AA", justify="center")
         self.bsod_label.pack(expand=True)
 
-        self.shake_task()
-        self.update_bsod_countdown()
+        self.shake_task()  # 開始震動視窗
+        self.update_bsod_countdown()  # 更新倒數文字
 
+    # 模擬畫面搖晃效果
     def shake_task(self):
         def s():
             for _ in range(15):
                 dx, dy = random.randint(-20, 20), random.randint(-20, 20)
                 self.bsod_win.geometry(f"+{dx}+{dy}")
                 time.sleep(0.05)
-            self.bsod_win.geometry("+0+0")
+            self.bsod_win.geometry("+0+0")  # 還原位置
         threading.Thread(target=s, daemon=True).start()
 
+    # 倒數 BSOD 畫面，自動轉下一階段
     def update_bsod_countdown(self):
         if self.remaining_seconds > 0:
             self.remaining_seconds -= 1
             text = (f":(\n\n你的電腦遇到問題，需要重新啟動。\n\n"
                     f"請等待 {self.remaining_seconds} 秒後自動重啟。\n\n"
-                    "若想了解更多，請搜尋此錯誤：you are GAY")
+                    "若想了解更多，請搜尋此錯誤：you are GAY")  # 惡搞文字
             self.bsod_label.config(text=text)
             self.bsod_win.after(1000, self.update_bsod_countdown)
         else:
             self.close_bsod_and_ask()
 
+    # 關閉 BSOD 畫面，開始提問互動
     def close_bsod_and_ask(self):
         self.bsod_win.destroy()
         self.ask_first_question()
 
+    # 提問：「你是否覺得陳立洺好帥？」
     def ask_first_question(self):
         self.show_question_window("你是否覺得陳立洺好帥？", self.ask_second_question, self.show_big_red_message)
 
+    # 如果選「是」，進入下一題
     def ask_second_question(self):
         if hasattr(self, "question_win"):
             self.question_win.destroy()
         self.ask_birthday_question()
 
+    # 提問陳立洺生日
     def ask_birthday_question(self):
         self.question_win = tk.Toplevel(self.root)
         self.question_win.attributes("-fullscreen", True)
@@ -145,17 +164,19 @@ class PrankApp:
         self.birthday_entry.focus()
         self.birthday_entry.bind("<Return>", self.check_birthday_answer)
 
-        self.spawn_fake_windows(25)
+        self.spawn_fake_windows(25)  # 干擾輸入視線的小視窗
 
+    # 判斷生日輸入是否正確
     def check_birthday_answer(self, event):
         ans = self.birthday_entry.get()
         if ans == "1008":
-            self.root.destroy()
+            self.root.destroy()  # 答對就結束程式
         else:
             if hasattr(self, "question_win"):
                 self.question_win.destroy()
-            self.ask_first_question()
+            self.ask_first_question()  # 答錯就重來
 
+    # 產生假錯誤視窗干擾玩家
     def spawn_fake_windows(self, count):
         for _ in range(count):
             win = tk.Toplevel(self.root)
@@ -165,6 +186,7 @@ class PrankApp:
             tk.Label(win, text="❌錯誤❌", font=("Arial", 20), fg="red", bg="black").pack(expand=True, fill="both")
             self.root.after(random.randint(500, 2000), win.destroy)
 
+    # 顯示全螢幕的問題與「是 / 否」按鈕
     def show_question_window(self, question, yes_command, no_command):
         self.question_win = tk.Toplevel(self.root)
         self.question_win.attributes("-fullscreen", True)
@@ -182,6 +204,7 @@ class PrankApp:
         btn_no = tk.Button(self.question_win, text="否", font=("Arial", 30), command=no_command)
         btn_no.pack(side="right", expand=True, fill="both")
 
+    # 如果選「否」，顯示紅字警告 30 秒
     def show_big_red_message(self):
         if hasattr(self, "question_win"):
             self.question_win.destroy()
@@ -197,15 +220,18 @@ class PrankApp:
         label = tk.Label(self.big_msg_win, text="那你別玩了", font=("Arial", 100, "bold"), fg="red", bg="black")
         label.pack(expand=True)
 
-        self.big_msg_win.after(30000, self.return_to_first_question)
+        self.big_msg_win.after(30000, self.return_to_first_question)  # 30 秒後再問一次
 
+    # 回到第一個提問
     def return_to_first_question(self):
         self.big_msg_win.destroy()
         self.ask_first_question()
 
+    # 啟動程式主迴圈
     def run(self):
         self.root.mainloop()
 
+# 程式進入點
 if __name__ == "__main__":
     app = PrankApp()
     app.run()
